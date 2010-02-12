@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 	/* Open TT font file */
 	if(sge_TTF_Init()!=0){fprintf(stderr,"TT error: %s\n", SDL_GetError());exit(1);}
 	sge_TTFont *font;
-	font=sge_TTF_OpenFont("font.ttf", 50);
+	font=sge_TTF_OpenFont("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 50);
 	if(font==NULL){fprintf(stderr,"TT error: %s\n", SDL_GetError());exit(1);}
 	
 	/* Make a nice background */

@@ -4,7 +4,17 @@
 Note by beoran: 
 
 This is a friendly fork of SGE in an effort to keep it bug fixed 
-and to prevent it from disappearing from the web.  
+and to prevent it from disappearing from the web.
+
+The following selected patches from the Debian package maintainers have been applied:
+debian/001_makefile_fixes.diff    
+debian/004_legacy_functions.diff  
+debian/005_freetype_support.diff  
+debian/006_freetype2_fixes.diff   
+debian/010_examples.diff  
+debian/015_overflow.diff
+debian/100_font.diff
+  
 
 ====================================================================================
 

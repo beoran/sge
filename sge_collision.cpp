@@ -336,7 +336,7 @@ int sge_bbcheck_shape(sge_shape *shape1, sge_shape *shape2)
 void sge_unset_cdata(sge_cdata *cd, Sint16 x, Sint16 y, Sint16 w, Sint16 h)
 {
 	Uint8 *map=cd->map;
-	Sint16 offs,len;
+	Sint32 offs,len;
 	int i,n=0;
 	
 	offs=y*cd->w + x;
@@ -365,7 +365,7 @@ void sge_unset_cdata(sge_cdata *cd, Sint16 x, Sint16 y, Sint16 w, Sint16 h)
 void sge_set_cdata(sge_cdata *cd, Sint16 x, Sint16 y, Sint16 w, Sint16 h)
 {
 	Uint8 *map=cd->map;
-	Sint16 offs,len;
+	Sint32 offs,len;
 	int i,n=0;
 	
 	offs=y*cd->w + x;

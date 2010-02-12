@@ -11,7 +11,7 @@ API_VER = 0
 OBJECTS=sge_surface.o sge_primitives.o sge_tt_text.o sge_bm_text.o sge_misc.o sge_textpp.o sge_blib.o sge_rotation.o sge_collision.o sge_shape.o
 
 all:	config $(OBJECTS) 
-	@ar rsc libSGE.a $(OBJECTS)
+	ar rsc libSGE.a $(OBJECTS)
 
 $(OBJECTS):	%.o:%.cpp %.h   #Each object depends on thier .cpp and .h file
 	$(CXX) $(CFLAGS) -c $<
@@ -31,7 +31,7 @@ dll-strip:	dll
 	@strip SGE.dll
 
 clean:
-	@rm -f *.o *.so *.a *.dll *.def
+	rm -f *.o *.so *.so.* *.a *.dll *.def
 
 config:
 	@echo "/* SGE Config header (generated automatically) */" >sge_config.h

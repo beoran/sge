@@ -1,24 +1,10 @@
 # Makefile for the SGE library examples
 
-include ../Makefile.conf
+CFLAGS = `sdl-config --cflags`
+LIBS = `sdl-config --libs` -lSGE
 
-CFLAGS += $(SGE_CFLAGS) -I./../
-LIBS =-L./../ -lSGE $(SGE_LIBS)
-
-TARGETS = fire bitmapfont collision blib rotate speedtest sprite sprite2 poly
-C_TARGETS =
-
-ifneq ($(USE_FT),n)
-  TARGETS += basics blitting input alpha inputdeluxe
-  ifeq ($(C_COMP),y)
-    C_TARGETS = basics_c
-  endif
-endif
-
-ifeq ($(USE_IMG),y)
-  TARGETS += sfont
-endif
-
+TARGETS = fire bitmapfont collision blib rotate speedtest sprite sprite2 poly basics blitting input alpha inputdeluxe sfont
+C_TARGETS = basics_c
 
 OBJECTS = $(addsuffix .o, $(TARGETS))
 C_OBJECTS = $(addsuffix .o, $(C_TARGETS))

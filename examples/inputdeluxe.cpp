@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	//Open a TT font
 	if(sge_TTF_Init()!=0){fprintf(stderr,"TT error: %s\n",SDL_GetError());exit(1);} 	
 	sge_TTFont *font;
-	font=sge_TTF_OpenFont("font.ttf", 25);
+	font=sge_TTF_OpenFont("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 25);
 	if(font==NULL){fprintf(stderr,"TT error: %s\n",SDL_GetError());exit(1);}
 
 	text.set_ttFont(font,0,255,0);    //Use our font

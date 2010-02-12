@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 
 	/* Draws TT text on screen */
 	if(sge_TTF_Init()!=0){fprintf(stderr,"TT error: %s\n",SDL_GetError());exit(1);}
-	font=sge_TTF_OpenFont("font.ttf", 50);
+	font=sge_TTF_OpenFont("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 50);
 	if(font==NULL){fprintf(stderr,"TT error: %s\n",SDL_GetError());exit(1);} 
 	
 	/* Draws TT text on screen */

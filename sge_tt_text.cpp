@@ -38,10 +38,8 @@
 #ifndef _SGE_NOTTF
 #include <ft2build.h>
 #include FT_FREETYPE_H
-/* #include <freetype/freetype.h> */
-/* #include <freetype/ftoutln.h> */
-/* #include <freetype/ttnameid.h> */
-/* #include <freetype/internal/ftobjs.h> */
+#include FT_OUTLINE_H
+#include FT_TRUETYPE_IDS_H
 
 /* The structure used to hold glyph information (cached) */
 struct glyph {
@@ -296,7 +294,7 @@ sge_TTFont *sge_TTF_OpenFontIndexRW(SDL_RWops *src, int freesrc, int ptsize, lon
 	}
 	memset(stream, 0, sizeof(*stream));
 
-	stream->memory = _sge_library->memory;
+	stream->memory = NULL;
 	stream->read = RWread;
 	stream->descriptor.pointer = src;
 	stream->pos = (unsigned long)position;
@@ -1456,3 +1454,16 @@ int sge_tt_input(SDL_Surface *screen, sge_TTFont *font, char *string, Uint8 flag
 }
 
 #endif /* _SGE_NOTTF */
+
+/**********************************************************************************/
+/**                    Legacy functions for backwards compatibility              **/
+/**********************************************************************************/
+
+void insert_char(Uint16 *string, Uint16 ch, int pos, int max) { ; }
+void delete_char(Uint16 *string, int pos, int max) { ; }
+
+SDL_Rect fast_update(SDL_Surface *Surface,SDL_Surface *buffer,SDL_Rect ret, int type,sge_TTFont *font,Uint16 *string, Sint16 x,Sint16 y, Uint32 fcol, Uint32 bcol,int Alpha) { return ret; }
+SDL_Rect nice_update(SDL_Surface *Surface,SDL_Surface *buffer,SDL_Rect ret, int type,sge_TTFont *font,Uint16 *string, Sint16 x,Sint16 y, Uint32 fcol, Uint32 bcol, int Alpha) { return ret; }
+
+int keyrepeat(SDL_Event *event, int wait) { return 0; }
+

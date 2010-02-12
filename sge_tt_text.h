@@ -93,9 +93,16 @@ DECLSPEC int sge_tt_input(SDL_Surface *screen,sge_TTFont *font,char *string,Uint
 
 DECLSPEC SDL_Surface *sge_TTF_Render(sge_TTFont *font,const Uint16 *text, SDL_Color fg, SDL_Color bg, int alpha_level);
 DECLSPEC SDL_Surface *sge_TTF_RenderUNICODE(sge_TTFont *font,const Uint16 *text, SDL_Color fg, SDL_Color bg);
+/* Legacy functions */
+DECLSPEC SDL_Rect fast_update(SDL_Surface *Surface,SDL_Surface *buffer,SDL_Rect ret, int type,sge_TTFont *font,Uint16 *string, Sint16 x,Sint16 y, Uint32 fcol, Uint32 bcol,int Alpha);
+DECLSPEC SDL_Rect nice_update(SDL_Surface *Surface,SDL_Surface *buffer,SDL_Rect ret, int type,sge_TTFont *font,Uint16 *string, Sint16 x,Sint16 y, Uint32 fcol, Uint32 bcol, int Alpha);
 #endif /* _SGE_NOTTF */
 
 DECLSPEC Uint16 *sge_Latin1_Uni(const char *text);
+/* Legacy functions */
+DECLSPEC int keyrepeat(SDL_Event *event, int wait);
+DECLSPEC void insert_char(Uint16 *string, Uint16 ch, int pos, int max);
+DECLSPEC void delete_char(Uint16 *string, int pos, int max);
 #ifdef _SGE_C
 }
 #endif
