@@ -14,6 +14,11 @@ debian/006_freetype2_fixes.diff
 debian/010_examples.diff  
 debian/015_overflow.diff
 debian/100_font.diff
+
+Please look in pkg to find the Windows precompiled binaries: 
+http://github.com/beoran/sge/blob/8668223513e6e28ba3251e1c972c569e1e916989/pkg/sge030809-w32.zip
+
+These may need to be updated for the patches babove, so any help by anyone who uses Windows is appreciated.
   
 
 ====================================================================================
