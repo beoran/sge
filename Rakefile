@@ -1,3 +1,70 @@
+
+# Configure Makefile for the SGE library
+
+# Comment/uncomment the following line to disable/enable build options
+# (See README for more info)
+C_COMP  = 'y'
+USE_FT  = 'y'
+USE_IMG = 'y'
+QUIET   = 'n'
+
+
+# Compilers (C and C++)
+CC_SUFIX   = 'gcc'
+CXX_SUFFIX = 'g++'
+
+rule :have_sdl do
+ sh "sdl-config --version < /dev/null > /dev/null 2>&1"
+end 
+
+
+# Where should SGE be installed?
+PREFIX =$(shell sdl-config --prefix)
+
+# Where should the headerfiles be installed?
+PREFIX_H =$(shell sdl-config --prefix)/include/SDL
+
+# Flags passed to the compiler
+CFLAGS = '-Wall -ffast-math'
+SGE_CFLAGS =$(shell sdl-config --cflags)
+# Uncomment to make some more optimizations
+#CFLAGS =-Wall -O9 -ffast-math -march=i686
+
+
+# Libs config
+SGE_LIBS =$(shell sdl-config --libs) -lstdc++
+
+
+# Is freetype-config available?
+HAVE_FT =$(shell if (freetype-config --version) < /dev/null > /dev/null 2>&1;
+then echo "y"; else echo "n"; fi;)
+ifeq ($(HAVE_FT),n)
+  USE:_FT = n
+endif
+
+ifneq ($(USE_FT),n)
+  USE_FT = y
+  SGE_LIBS +=$(shell freetype-config --libs)
+  FT_CFLAGS =$(shell freetype-config --cflags)
+endif
+
+
+# Is SDL_image available?
+HAVE_IMG =$(shell if test -e "`sdl-config --prefix`/include/SDL/SDL_image.h"
+>/dev/null 2>&1; then echo "y"; else echo "n"; fi;)
+
+ifneq ($(USE_IMG),y)
+  ifneq ($(USE_IMG),n)
+    USE_IMG =$(HAVE_IMG)
+  endif
+endif
+
+ifeq ($(USE_IMG),y)
+  SGE_LIBS +=-lSDL_image
+endif
+
+
+CFLAGS  = ENV['CFLAGS'] || ''
 CFLAGS += SGE_CFLAGS + FT_CFLAGS + ' -fPIC '
 LIBS    = SGE_LIBS
 
@@ -62,44 +129,26 @@ CLEAN.include('*.dll')
 CLEAN.include('*.def')
 
 
-config:
-  @echo "/* SGE Config header (generated automatically) */" >sge_config.h
-  @echo "#define SGE_VER $(SGE_VER)" >>sge_config.h 
-ifeq ($(C_COMP),y)
-  @echo "#define _SGE_C_AND_CPP" >>sge_config.h
-endif
-ifeq ($(USE_FT),n)
-  @echo "#define _SGE_NOTTF" >>sge_config.h
-endif
-ifeq ($(USE_IMG),y)
-  @echo "#define _SGE_HAVE_IMG" >>sge_config.h
-endif
-ifeq ($(NO_CLASSES),y)
-  @echo "#define _SGE_NO_CLASSES" >>sge_config.h
-endif
+rule :config do
+  cfg = File.open('sge_config.h')
+  cfg.puts "/* SGE Config header (generated automatically) */" 
+  cfg.puts "#define SGE_VER #{SGE_VER}" 
+  if C_COMP == 'y'
+    cfg.puts "#define _SGE_C_AND_CPP"
+  end
+  if USE_FT == 'n'
+    cfg.puts "#define _SGE_NOTTF"
+  end
+  if USE_IMG == 'y'
+    cfg.puts "#define _SGE_HAVE_IMG"
+  end
+  if NO_CLASSES == 'y'
+    cfg.puts "#define _SGE_NO_CLASSES"
+  end
+end
 
-ifneq ($(QUIET),y)
-  @echo "== SGE r$(SGE_VER)"
-ifeq ($(C_COMP),y)
-  @echo "== Note: Trying to be C friendly."
-endif
-ifeq ($(USE_FT),n)
-  @echo "== FreeType2 support disabled."
-else
-  @echo "== FreeType2 support enabled."
-endif
-ifeq ($(USE_IMG),y)
-  @echo "== SDL_Image (SFont) support enabled."
-else
-  @echo "== SDL_Image (SFont) support disabled."
-endif
-ifeq ($(NO_CLASSES),y)
-  @echo "== Warning: No C++ classes will be build!"
-endif
-  @echo ""  
-endif
-
-install:  shared
+rule :install => :shared do
+=begin
   @mkdir -p $(PREFIX_H)
   install -c -m 644 sge*.h $(PREFIX_H)
   @mkdir -p $(PREFIX)/lib
@@ -110,3 +159,5 @@ install:  shared
   ln -sf libSGE.so.$(API_VER) libSGE.so
   @echo "** Headerfiles installed in $(PREFIX_H)"
   @echo "** Library files installed in $(PREFIX)/lib"
+=end
+end
