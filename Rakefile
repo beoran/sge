@@ -19,54 +19,45 @@ end
 
 
 # Where should SGE be installed?
-PREFIX =$(shell sdl-config --prefix)
+PREFIX =%x{sdl-config --prefix}
 
 # Where should the headerfiles be installed?
-PREFIX_H =$(shell sdl-config --prefix)/include/SDL
+PREFIX_H ="#{PREFIX}/include/SDL"
 
 # Flags passed to the compiler
-CFLAGS = '-Wall -ffast-math'
-SGE_CFLAGS =$(shell sdl-config --cflags)
+CFLAGS = '-Wall -O -ffast-math'
+SGE_CFLAGS =%x{sdl-config --cflags}
 # Uncomment to make some more optimizations
-#CFLAGS =-Wall -O9 -ffast-math -march=i686
-
 
 # Libs config
-SGE_LIBS =$(shell sdl-config --libs) -lstdc++
-
+SGE_LIBS =%x{sdl-config --libs} + ' -lstdc++ '
 
 # Is freetype-config available?
-HAVE_FT =$(shell if (freetype-config --version) < /dev/null > /dev/null 2>&1;
-then echo "y"; else echo "n"; fi;)
-ifeq ($(HAVE_FT),n)
-  USE:_FT = n
-endif
+HAVE_FT  =%x{if (freetype-config --version) < /dev/null > /dev/null 2>&1;
+then echo "y"; else echo "n"; fi;}
 
-ifneq ($(USE_FT),n)
-  USE_FT = y
-  SGE_LIBS +=$(shell freetype-config --libs)
-  FT_CFLAGS =$(shell freetype-config --cflags)
-endif
+USE_FT ||= HAVE_FT
 
+if USE_FT == 'y'
+  USE_FT = 'y'
+  SGE_LIBS +=%x{freetype-config --libs}
+  FT_CFLAGS =%{freetype-config --cflags}
+end
 
 # Is SDL_image available?
-HAVE_IMG =$(shell if test -e "`sdl-config --prefix`/include/SDL/SDL_image.h"
->/dev/null 2>&1; then echo "y"; else echo "n"; fi;)
+HAVE_IMG =%x{if test -e "`sdl-config --prefix`/include/SDL/SDL_image.h"
+>/dev/null 2>&1; then echo "y"; else echo "n"; fi;}
 
-ifneq ($(USE_IMG),y)
-  ifneq ($(USE_IMG),n)
-    USE_IMG =$(HAVE_IMG)
-  endif
-endif
+USE_IMG ||= HAVE_IMG
 
-ifeq ($(USE_IMG),y)
-  SGE_LIBS +=-lSDL_image
-endif
+if USE_IMG == 'y'
+  SGE_LIBS += '-lSDL_image'
+end
 
 
-CFLAGS  = ENV['CFLAGS'] || ''
-CFLAGS += SGE_CFLAGS + FT_CFLAGS + ' -fPIC '
-LIBS    = SGE_LIBS
+CFLAGS_ENV  = ENV['CFLAGS'] || ''
+CFLAGS      = CFLAGS_ENV + ' ' + SGE_CFLAGS + ' ' + FT_CFLAGS + ' -fPIC '
+LIBS        = SGE_LIBS
 
 SGE_VER = '030809'
 API_VER = 0
