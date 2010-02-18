@@ -108,12 +108,12 @@ C[:AR_NAME]   = 'ar'
 C[:CC_NAME]   = 'gcc'
 C[:CXX_NAME]  = 'g++'
 C[:LD_NAME]   = 'ld'
+C[:NO_CLASSES]= true 
 
 
-
-rule :have_sdl do
- sh "sdl-config --version < /dev/null > /dev/null 2>&1"
-end 
+# rule :have_sdl do
+#  sh "sdl-config --version < /dev/null > /dev/null 2>&1"
+# end 
 
 # Where should SGE be installed?
 C[:PREFIX]    = %x{sdl-config --prefix}.chomp
@@ -137,7 +137,7 @@ if C[:HAVE_FT] == 'y' && C[:USE_FT]
   C[:LIBS]   += %x{freetype-config --libs}.chomp.split(' ')
   C[:CFLAGS] += %x{freetype-config --cflags}.chomp.split(' ')
 else 
-  c[:USE_FT]  = false 
+  C[:USE_FT]  = false 
 end
 
 # Is SDL_image available?
@@ -153,35 +153,45 @@ end
 C[:SGE_VERSION]       = '030809'
 C[:API_VERSION]       = 0
 C[:PLATFORM_PREFIX]   = '' 
-C[:AR]                = C[:PLATFORM_PREFIX] + C[:AR]
-C[:CC]                = C[:PLATFORM_PREFIX] + C[:CC]
-C[:CXX]               = C[:PLATFORM_PREFIX] + C[:CXX]
-C[:LD]                = C[:PLATFORM_PREFIX] + C[:LD]
+C[:AR]                = C[:PLATFORM_PREFIX] + C[:AR_NAME]
+C[:CC]                = C[:PLATFORM_PREFIX] + C[:CC_NAME]
+C[:CXX]               = C[:PLATFORM_PREFIX] + C[:CXX_NAME]
+C[:LD]                = C[:PLATFORM_PREFIX] + C[:LD_NAME]
 
 
 CPP_FILES             = FileList['*.cpp']
 O_FILES               = CPP_FILES.sub(/\.cpp$/, '.o')
 
-C[:OBJECTS]           = %w{sge_surface.o sge_primitives.o sge_tt_text.o
-                           sge_bm_text.o sge_misc.o sge_textpp.o sge_blib.o
-                           sge_rotation.o sge_collision.o sge_shape.o}
+C[:OBJECTS]           = O_FILES
 
-rule :all => [:config, C[:OBJECTS] ] do |r|
+
+rule 'all' => ['config', *C[:OBJECTS] ] do |r|
   static_library 'SGE', C[:OBJECTS]
 end
 
-#Each object depends on thier .cpp and .h file
-rule  '.o' => ['.cpp',  '.h']  do |r|
+# Dependencies
+file '.depend.mf' do
+  sh "makedepend -f- --  -- #{CPP_FILES} > .depend.mf"
+end
+
+import ".depend.mf"
+
+
+#Each object depends on their .cpp and .h file
+rule '.o' => ['.cpp']  do |r|
   cxx r.source, r.name
 end
 
-rule :shared => :all do |r|
+
+rule 'shared' => 'all' do |r|
   shared_library 'SGE', C[:OBJECTS]
 end
 
-rule :shared_strip => :shared do |r|
+
+rule 'shared_strip' => 'shared' do |r|
   strip(slibfile('SGE'))
 end
+
 
 require 'rake/clean'
 CLEAN.include('*.o')
@@ -191,26 +201,27 @@ CLEAN.include('*.dll')
 CLEAN.include('*.def')
 
 
-rule :config do
-  cfg = File.open('sge_config.h')
+
+rule 'config' do
+  cfg = File.open('sge_config.h', 'w')
   cfg.puts "/* SGE Config header (generated automatically) */" 
-  cfg.puts "#define SGE_VER #{SGE_VER}" 
-  if C_COMP == 'y'
+  cfg.puts "#define SGE_VER #{C[:SGE_VERSION]}" 
+  if C[:C_COMP]
     cfg.puts "#define _SGE_C_AND_CPP"
   end
-  if USE_FT == 'n'
+  unless C[:USE_FT]
     cfg.puts "#define _SGE_NOTTF"
   end
-  if USE_IMG == 'y'
+  if C[:USE_IMG]
     cfg.puts "#define _SGE_HAVE_IMG"
   end
-  if NO_CLASSES == 'y'
+  if C[:NO_CLASSES]
     cfg.puts "#define _SGE_NO_CLASSES"
   end
 end
 
-rule :install => :shared do
 =begin
+rule :install => :shared do
   @mkdir -p $(PREFIX_H)
   install -c -m 644 sge*.h $(PREFIX_H)
   @mkdir -p $(PREFIX)/lib
@@ -221,8 +232,8 @@ rule :install => :shared do
   ln -sf libSGE.so.$(API_VER) libSGE.so
   @echo "** Headerfiles installed in $(PREFIX_H)"
   @echo "** Library files installed in $(PREFIX)/lib"
-=end
 end
+=end
 
 =begin
 
