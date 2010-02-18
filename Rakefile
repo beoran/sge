@@ -60,12 +60,16 @@ module Kuwa
   end
   
   def libfile(name)
-    return "lib{name}.a"
+    return "lib#{name}.a"
   end
   
   def slibfile(name)
-    return "lib{name}.so"
+    return "lib#{name}.so"
   end
+  
+  def exefile(name)
+    return "#{name}"
+  return
   
   
   def static_library(lib, objects)
