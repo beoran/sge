@@ -1,5 +1,120 @@
 
+if $0 == __FILE__
+  require 'rake'
+end  
+
+require 'singleton'
+
+# Kuwa (japanese for Hoe) 
+# rake helper for compiling and cross compiling C, C++ 
+module Kuwa
+
+  class Environment
+    attr_accessor :libs
+    attr_accessor :cc
+    attr_accessor :cxx
+    attr_accessor :ar
+    attr_accessor :cflags
+    
+  end 
+  
+
+  PATHLIST_SEP = ':'
+ 
+  # Splits a path list from the environment into a Filelist
+  def env2filelist(name)
+    result = FileList.new
+    env    = ENV[name]
+    return result unless env
+    result << env.split(PATHLIST_SEP)
+  end
+
+  def c_libs
+    @c_libs ||= env2filelist(name)
+    return @c_libs
+  end
+  
+  # Module that helps keeping track of the build environment paths, 
+  # constants, etc
+  module C
+    def self.[](key)
+      @kuwa_environment ||= {}
+      @kuwa_environment[key]  
+    end
+    
+    def self.[]=(key, *values)
+      @kuwa_environment ||= {}
+      @kuwa_environment[key.to_sym] = values  
+    end
+  end  
+  
+  # Helper functions
+  
+  # Call the ar static lib builder
+  def ar(options, target, src) 
+    sh "#{C[:AR]} #{options} #{target} #{src.join(' ')}" 
+  end
+  
+  def cxx(source, object) 
+    sh "#{CXX} #{CFLAGS} -c  #{source} -o #{object}"
+  end
+  
+  def libfile(name)
+    return "lib{name}.a"
+  end
+  
+  def slibfile(name)
+    return "lib{name}.so"
+  end
+  
+  
+  def static_library(lib, objects)
+  sh "#{AR} rsc #{libfile(lib)} #{objects.join(' ')}" 
+  end
+  
+  def shared_library(lib, objects)
+  sh "#{CXX} #{CFLAGS} -Wl,-soname,#{slibfile(lib)}.#{API_VER} -fpic -fPIC
+  -shared -o #{slibfile(lib)} #{objects.join(' ')} #{LIBS}"
+  end
+
+  
+end
+
+include Kuwa
+C[:LIBS] = 'foo', 'bar'
+p C[:LIBS]
+
+# Helper functions
+
+def ar(options, target, src) 
+  sh "#{AR} #{options} #{target} #{src.join(' ')}" 
+end
+
+def cxx(source, object) 
+  sh "#{CXX} #{CFLAGS} -c  #{source} -o #{object}"
+end
+
+def libfile(name)
+  return "lib{name}.a"
+end
+
+def slibfile(name)
+  return "lib{name}.so"
+end
+
+
+def static_library(lib, objects)
+ sh "#{AR} rsc #{libfile(lib)} #{objects.join(' ')}" 
+end
+
+def shared_library(lib, objects)
+ sh "#{CXX} #{CFLAGS} -Wl,-soname,#{slibfile(lib)}.#{API_VER} -fpic -fPIC
+-shared -o #{slibfile(lib)} #{objects.join(' ')} #{LIBS}"
+end
+
+
 # Configure Makefile for the SGE library
+
 
 # Comment/uncomment the following line to disable/enable build options
 # (See README for more info)
@@ -34,14 +149,17 @@ SGE_LIBS =%x{sdl-config --libs} + ' -lstdc++ '
 
 # Is freetype-config available?
 HAVE_FT  =%x{if (freetype-config --version) < /dev/null > /dev/null 2>&1;
-then echo "y"; else echo "n"; fi;}
+then echo "y"; else echo "n"; fi;}.chomp
 
-USE_FT ||= HAVE_FT
+p HAVE_FT
 
-if USE_FT == 'y'
-  USE_FT = 'y'
+if HAVE_FT == 'y'
+  USE_FT    = 'y'
   SGE_LIBS +=%x{freetype-config --libs}
   FT_CFLAGS =%{freetype-config --cflags}
+else 
+  USE_FT = 'n'
+  FT_CFLAGS = ''
 end
 
 # Is SDL_image available?
@@ -69,31 +187,6 @@ OBJECTS = %w{sge_surface.o sge_primitives.o sge_tt_text.o sge_bm_text.o
 sge_misc.o sge_textpp.o sge_blib.o sge_rotation.o sge_collision.o sge_shape.o}
 
 
-def ar(options, target, src) 
-  sh "#{AR} #{options} #{target} #{src.join(' ')}" 
-end
-
-def cxx(source, object) 
- sh "#{CXX} #{CFLAGS} -c  #{source} -o #{object}"
-end
-
-def libfile(name)
-  return "lib{name}.a"
-end
-
-def slibfile(name)
-  return "lib{name}.so"
-end
-
-
-def static_library(lib, objects)
- sh "#{AR} rsc #{libfile(lib)} #{objects.join(' ')}" 
-end
-
-def shared_library(lib, objects)
- sh "#{CXX} #{CFLAGS} -Wl,-soname,#{slibfile(lib)}.#{API_VER} -fpic -fPIC
--shared -o #{slibfile(lib)} #{objects.join(' ')} #{LIBS}"
-end
 
 rule :all => [:config, OBJECTS ] do |r|
   static_library 'SGE', OBJECTS
@@ -152,3 +245,38 @@ rule :install => :shared do
   @echo "** Library files installed in $(PREFIX)/lib"
 =end
 end
+
+=begin
+
+require 'rake/clean'
+require 'rake/loaders/makefile'
+
+APPLICATION = 'test.exe'
+CPP_FILES = FileList['*.cpp']
+O_FILES = CPP_FILES.sub(/\.cpp$/, '.o')
+
+# Dependencies
+file '.depend.mf' do
+  sh "makedepend -f- --  -- #{CPP_FILES} > .depend.mf"
+end
+
+import ".depend.mf"
+
+file APPLICATION => O_FILES do |t|
+  sh "g++ #{O_FILES} -o #{t.name}"
+end
+
+rule ".o" => [".cpp"] do |t|
+  sh "g++ -c -o #{t.name} #{t.source}"
+end
+
+CPP_FILES.each do |src|
+  file src.ext(".o") => src
+end
+
+CLEAN.include("**/*.o")
+CLEAN.include(APPLICATION)
+CLEAN.include(".depend.mf")
+
+task :default => APPLICATION
+=end
