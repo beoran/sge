@@ -126,7 +126,7 @@ C[:CFLAGS]   += %w{-Wall -O -ffast-math}
 # SDL CFLAGS
 C[:SDL_CFLAGS]=%x{sdl-config --cflags}.chomp.split(' ')
 C[:CFLAGS]   += C[:SDL_CFLAGS]
-C[:SDL_LIBS]  = %x{sdl-config --libs}.chomp.split(' ')
+C[:LIBS]      = %x{sdl-config --libs}.chomp.split(' ')
 C[:LIBS]     << '-lstdc++'
 
 # Is freetype-config available?
