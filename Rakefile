@@ -50,9 +50,14 @@ module Kuwa
   
   # Helper functions
   
+  def cmd(command, *args)
+    aid = command + " " + args.join(" ")
+    return sh(aid)
+  end
+  
   # Call the ar static lib builder
   def ar(options, target, src) 
-    sh "#{C[:AR]} #{options} #{target} #{src.join(' ')}" 
+    cmd(C[:AR], options, target, src.join(' ')) 
   end
   
   def cxx(source, object) 
@@ -69,7 +74,7 @@ module Kuwa
   
   def exefile(name)
     return "#{name}"
-  return
+  end
   
   
   def static_library(lib, objects)
