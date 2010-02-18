@@ -56,13 +56,22 @@ module Kuwa
   end
   
   # Call the ar static lib builder
-  def ar(options, target, src) 
-    cmd(C[:AR], options, target, src.join(' ')) 
+  def ar(options, target, *objects) 
+    cmd C[:AR], options, target, objects.join(' ')
   end
   
   def cxx(source, object) 
-    sh "#{CXX} #{CFLAGS} -c  #{source} -o #{object}"
+    cmd C[:CXX], C[:CFLAGS].join(' '), '-c', source, '-o', object  
   end
+  
+  def cc(source, object) 
+    cmd C[:CC], C[:CFLAGS].join(' '), '-c', source, '-o', object
+  end
+  
+  def ld(options, target, *objects)
+    cmd C[:LD], options, '-o', target, objects.join(' ')
+  end
+  
   
   def libfile(name)
     return "lib#{name}.a"
@@ -77,128 +86,88 @@ module Kuwa
   end
   
   
-  def static_library(lib, objects)
-  sh "#{AR} rsc #{libfile(lib)} #{objects.join(' ')}" 
+  def static_library(lib, *objects)
+    ar 'rsc', libfile(lib), *objects 
   end
+  
   
   def shared_library(lib, objects)
-  sh "#{CXX} #{CFLAGS} -Wl,-soname,#{slibfile(lib)}.#{API_VER} -fpic -fPIC
-  -shared -o #{slibfile(lib)} #{objects.join(' ')} #{LIBS}"
+    slib  = slibfile(lib)
+    api   = "#{slib}.#{C[:API_VERSION]}"
+    ld "-soname #{api} -fpic -fPIC -shared", slib, objects
   end
-
-  
 end
 
 include Kuwa
-C[:LIBS] = 'foo', 'bar'
-p C[:LIBS]
 
-# Helper functions
-
-def ar(options, target, src) 
-  sh "#{AR} #{options} #{target} #{src.join(' ')}" 
-end
-
-def cxx(source, object) 
-  sh "#{CXX} #{CFLAGS} -c  #{source} -o #{object}"
-end
-
-def libfile(name)
-  return "lib{name}.a"
-end
-
-def slibfile(name)
-  return "lib{name}.so"
-end
+C[:C_COMP]    = true
+C[:USE_FT]    = true
+C[:USE_IMG]   = true
+C[:QUIET]     = true
+C[:AR_NAME]   = 'ar'
+C[:CC_NAME]   = 'gcc'
+C[:CXX_NAME]  = 'g++'
+C[:LD_NAME]   = 'ld'
 
 
-def static_library(lib, objects)
- sh "#{AR} rsc #{libfile(lib)} #{objects.join(' ')}" 
-end
-
-def shared_library(lib, objects)
- sh "#{CXX} #{CFLAGS} -Wl,-soname,#{slibfile(lib)}.#{API_VER} -fpic -fPIC
--shared -o #{slibfile(lib)} #{objects.join(' ')} #{LIBS}"
-end
-
-
-# Configure Makefile for the SGE library
-
-
-# Comment/uncomment the following line to disable/enable build options
-# (See README for more info)
-C_COMP  = 'y'
-USE_FT  = 'y'
-USE_IMG = 'y'
-QUIET   = 'n'
-
-
-# Compilers (C and C++)
-CC_SUFIX   = 'gcc'
-CXX_SUFFIX = 'g++'
 
 rule :have_sdl do
  sh "sdl-config --version < /dev/null > /dev/null 2>&1"
 end 
 
-
 # Where should SGE be installed?
-PREFIX =%x{sdl-config --prefix}
-
+C[:PREFIX]    = %x{sdl-config --prefix}.chomp
 # Where should the headerfiles be installed?
-PREFIX_H ="#{PREFIX}/include/SDL"
+C[:PREFIX_H]  = "#{C[:PREFIX]}/include/SDL"
 
 # Flags passed to the compiler
-CFLAGS = '-Wall -O -ffast-math'
-SGE_CFLAGS =%x{sdl-config --cflags}
-# Uncomment to make some more optimizations
-
-# Libs config
-SGE_LIBS =%x{sdl-config --libs} + ' -lstdc++ '
+C[:CFLAGS]    = ENV['CFLAGS'] ? ENV['CFLAGS'].split(' ') : []
+C[:CFLAGS]   += %w{-Wall -O -ffast-math}
+# SDL CFLAGS
+C[:SDL_CFLAGS]=%x{sdl-config --cflags}.chomp.split(' ')
+C[:CFLAGS]   += C[:SDL_CFLAGS]
+C[:SDL_LIBS]  = %x{sdl-config --libs}.chomp.split(' ')
+C[:LIBS]     << '-lstdc++'
 
 # Is freetype-config available?
-HAVE_FT  =%x{if (freetype-config --version) < /dev/null > /dev/null 2>&1;
+C[:HAVE_FT]  =%x{if (freetype-config --version) < /dev/null > /dev/null 2>&1;
 then echo "y"; else echo "n"; fi;}.chomp
 
-p HAVE_FT
-
-if HAVE_FT == 'y'
-  USE_FT    = 'y'
-  SGE_LIBS +=%x{freetype-config --libs}
-  FT_CFLAGS =%{freetype-config --cflags}
+if C[:HAVE_FT] == 'y' && C[:USE_FT]
+  C[:LIBS]   += %x{freetype-config --libs}.chomp.split(' ')
+  C[:CFLAGS] += %x{freetype-config --cflags}.chomp.split(' ')
 else 
-  USE_FT = 'n'
-  FT_CFLAGS = ''
+  c[:USE_FT]  = false 
 end
 
 # Is SDL_image available?
-HAVE_IMG =%x{if test -e "`sdl-config --prefix`/include/SDL/SDL_image.h"
->/dev/null 2>&1; then echo "y"; else echo "n"; fi;}
+C[:HAVE_IMG] =%x{if test -e "`sdl-config --prefix`/include/SDL/SDL_image.h"
+>/dev/null 2>&1; then echo "y"; else echo "n"; fi;}.chomp
 
-USE_IMG ||= HAVE_IMG
-
-if USE_IMG == 'y'
-  SGE_LIBS += '-lSDL_image'
+if C[:HAVE_IMG] && C[:USE_IMG]
+  C[:LIBS] << '-lSDL_image'
+else
+  C[:USE_IMG] = false 
 end
 
-
-CFLAGS_ENV  = ENV['CFLAGS'] || ''
-CFLAGS      = CFLAGS_ENV + ' ' + SGE_CFLAGS + ' ' + FT_CFLAGS + ' -fPIC '
-LIBS        = SGE_LIBS
-
-SGE_VER = '030809'
-API_VER = 0
-
-PLATFORM_PREFIX = ''
-AR              = PLATFORM_PREFIX + 'ar'
-
-OBJECTS = %w{sge_surface.o sge_primitives.o sge_tt_text.o sge_bm_text.o
-sge_misc.o sge_textpp.o sge_blib.o sge_rotation.o sge_collision.o sge_shape.o}
+C[:SGE_VERSION]       = '030809'
+C[:API_VERSION]       = 0
+C[:PLATFORM_PREFIX]   = '' 
+C[:AR]                = C[:PLATFORM_PREFIX] + C[:AR]
+C[:CC]                = C[:PLATFORM_PREFIX] + C[:CC]
+C[:CXX]               = C[:PLATFORM_PREFIX] + C[:CXX]
+C[:LD]                = C[:PLATFORM_PREFIX] + C[:LD]
 
 
+CPP_FILES             = FileList['*.cpp']
+O_FILES               = CPP_FILES.sub(/\.cpp$/, '.o')
 
-rule :all => [:config, OBJECTS ] do |r|
-  static_library 'SGE', OBJECTS
+C[:OBJECTS]           = %w{sge_surface.o sge_primitives.o sge_tt_text.o
+                           sge_bm_text.o sge_misc.o sge_textpp.o sge_blib.o
+                           sge_rotation.o sge_collision.o sge_shape.o}
+
+rule :all => [:config, C[:OBJECTS] ] do |r|
+  static_library 'SGE', C[:OBJECTS]
 end
 
 #Each object depends on thier .cpp and .h file
@@ -207,7 +176,7 @@ rule  '.o' => ['.cpp',  '.h']  do |r|
 end
 
 rule :shared => :all do |r|
-  shared_library 'SGE', OBJECTS
+  shared_library 'SGE', C[:OBJECTS]
 end
 
 rule :shared_strip => :shared do |r|

@@ -6,7 +6,8 @@ Note by beoran:
 This is a friendly fork of SGE in an effort to keep it bug fixed 
 and to prevent it from disappearing from the web.
 
-The following selected patches from the Debian package maintainers have been applied:
+The following selected patches from the Debian package maintainers have 
+been applied:
 debian/001_makefile_fixes.diff    
 debian/004_legacy_functions.diff  
 debian/005_freetype_support.diff  
@@ -18,7 +19,8 @@ debian/100_font.diff
 Please look in pkg to find the Windows precompiled binaries: 
 http://github.com/beoran/sge/blob/8668223513e6e28ba3251e1c972c569e1e916989/pkg/sge030809-w32.zip
 
-These may need to be updated for the patches babove, so any help by anyone who uses Windows is appreciated.
+These may need to be updated for the patches above, so any help by anyone who 
+uses Windows is appreciated.
   
 
 ====================================================================================
@@ -30,7 +32,7 @@ http://freshmeat.net/projects/sge/
 http://www.etek.chalmers.se/~e8cal1/sge/index.html
 http://www.digitalfanatics.org/cal/sge/index.html
 
-Author: Anders Lindström - email: cal@swipnet.se
+Author: Anders Lindstrï¿½m - email: cal@swipnet.se
 
 
 1. Intro
@@ -242,4 +244,4 @@ Read the html documentation and study the examples.
 
 
 
-/Anders Lindström - email: cal@swipnet.se
+/Anders Lindstrï¿½m - email: cal@swipnet.se
